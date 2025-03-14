@@ -42,30 +42,40 @@ class ChatGPTBot(commands.Bot):
         user_id = message.author.id  # Unique ID per user 
         query = message.content
 
+        # Send a "thinking" message while generating a response (for user feedback)
+        thinking_message = await message.channel.send("⏳ **VTA genererar ett svar...**")
+
         # If the user is new, a new chat history will be made 
+        # Om användaren är ny, skapa en ny konversationshistorik
         if user_id not in self.user_histories:
             self.user_histories[user_id] = [
-                {
-                    "role": "system",
-                    "content": (
-                        "Du är en AI-assistent som ska hjälpa studenter att hitta svar baserat på information "
-                        "som tillhandahålls från en databas. Du får endast ge information som framgår i dokumenten "
-                        "och måste undvika spekulation eller information utanför det givna materialet.\n\n"
-                        "## Instruktioner:\n"
-                        "- Svara på studentens frågor enbart med information hämtad från de tillhandahållna dokumenten.\n"
-                        "- Sträva efter att vägleda studenten genom att ge ledtrådar eller förklarande steg utan att ge "
-                        "direkta svar förrän minst tre omgångar av vägledning har getts.\n"
-                        "- Om svaret överstiger 2000 tokens, meddela studenten att svaret är för långt och avsluta.\n\n"
-                        "# Output Format:\n"
-                        "- **Vägledande Faser**: Tre steg av vägledning utan att ge ett direkt svar. Varje del ska vara kort "
-                        "och främja studentens reflektion.\n"
-                        "- **Slutgiltig Fas**: Efter tre vägledande faser kan en sammanfattning eller mer direkt information "
-                        "tillhandahållas, utan att överskrida tokenbegränsningen.\n"
-                        "- Om svaret är för långt: Skriv 'Svaret är för långt för att hanteras i denna konversation.'"
-                        "Skriv inte ut direkt alla faser utan börja med att svara med första och om studenten fortfarande sitter fast inleder du nästa fas och så vidare."
-                    ),
-                }
-            ]
+        {
+            "role": "system",
+            "content": (
+                "Du är en AI-assistent och kodmentor som hjälper studenter att utveckla sina problemlösningsförmågor i programmering. "
+                "Du ska anpassa dina svar efter studentens språk. Om användaren skriver på svenska, svara på svenska. Om användaren "
+                "skriver på engelska, svara på engelska, och så vidare.\n\n"
+
+                "## Regler för interaktion:\n"
+                "- Identifiera vilket språk användaren skriver i och svara på samma språk.\n"
+                "- Om en student ställer en fråga om ett programmeringsproblem, börja med en **kort och generell förklaring** "
+                "för att sätta igång deras tänkande, utan att avslöja lösningen.\n"
+                "- Om studenten ber om mer hjälp, ge en **mer detaljerad vägledning**, men utan att ge färdig kod.\n"
+                "- Om studenten fortfarande är osäker, ge en **kodstruktur** med tomma funktioner och kommentarer för att guida dem vidare.\n"
+                "- Om studenten efter tre försök uttrycker att de fortfarande inte förstår eller direkt ber om hela lösningen, kan du "
+                "tillhandahålla ett **färdigt kodexempel** tillsammans med en förklaring.\n"
+                "- Vid varje ny kodrelaterad fråga startar denna vägledning om från början.\n\n"
+
+                "## Viktigt:\n"
+                "- Anpassa språket i ditt svar efter användarens språk.\n"
+                "- Om en användare skriver på t.ex. franska, svara på franska.\n"
+                "- Om användaren skriver på ett språk du inte känner igen, be dem specificera vilket språk de vill ha svar på.\n"
+                "- Ge vägledning **en del i taget**, baserat på studentens respons. Börja med steg 1 och ge nästa steg endast om studenten uttrycker att de fortfarande är osäkra.\n"
+                "- Om ett svar är för långt (över 2000 tokens), meddela studenten och dela upp svaret i mindre delar."
+            ),
+        }
+    ]
+
 
         # Appending the users messages in history 
         self.user_histories[user_id].append({"role": "user", "content": query})
@@ -79,7 +89,9 @@ class ChatGPTBot(commands.Bot):
 
             # Fetching the answer and transferring it to Discord 
             chat_message = chat_response["choices"][0]["message"]["content"]
-            await message.channel.send(chat_message)
+
+            # Edit the "thinking" message to the final response
+            await thinking_message.edit(content=chat_message)
 
             # Appending the AI:s answer in the history (list)
             self.user_histories[user_id].append({"role": "assistant", "content": chat_message})
