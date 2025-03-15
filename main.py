@@ -116,4 +116,4 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
-#python3 gpt-system-prompt.py 
+#python3 main.py 
