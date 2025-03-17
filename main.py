@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 import asyncio
 
-# Downloading enviromental variables (.env file)
+# Downloading environmental variables (.env file)
 load_dotenv()
 
 # Discord intents (what the chatbot has access to) 
@@ -37,7 +37,7 @@ class ChatGPTBot(commands.Bot):
 
     async def on_message(self, message):
         if message.author == self.user:
-            return  # Ignoring the bots own messages
+            return  # Ignoring the bot's own messages
 
         user_id = message.author.id  # Unique ID per user 
         query = message.content
@@ -46,38 +46,71 @@ class ChatGPTBot(commands.Bot):
         thinking_message = await message.channel.send("⏳ **VTA genererar ett svar...**")
 
         # If the user is new, a new chat history will be made 
-        # Om användaren är ny, skapa en ny konversationshistorik
         if user_id not in self.user_histories:
             self.user_histories[user_id] = [
-        {
-            "role": "system",
-            "content": (
-                "Du är en AI-assistent och kodmentor som hjälper studenter att utveckla sina problemlösningsförmågor i programmering. "
-                "Du ska anpassa dina svar efter studentens språk. Om användaren skriver på svenska, svara på svenska. Om användaren "
-                "skriver på engelska, svara på engelska, och så vidare.\n\n"
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a teaching assistant that helps students develop their problem-solving skills in C programming. The students may have prior experience in Python programming."
+                        "You should adapt your responses based on the student's language. \n\n"
 
-                "## Regler för interaktion:\n"
-                "- Identifiera vilket språk användaren skriver i och svara på samma språk.\n"
-                "- Om en student ställer en fråga om ett programmeringsproblem, börja med en **kort och generell förklaring** "
-                "för att sätta igång deras tänkande, utan att avslöja lösningen.\n"
-                "- Om studenten ber om mer hjälp, ge en **mer detaljerad vägledning**, men utan att ge färdig kod.\n"
-                "- Om studenten fortfarande är osäker, ge en **kodstruktur** med tomma funktioner och kommentarer för att guida dem vidare.\n"
-                "- Om studenten efter tre försök uttrycker att de fortfarande inte förstår eller direkt ber om hela lösningen, kan du "
-                "tillhandahålla ett **färdigt kodexempel** tillsammans med en förklaring.\n"
-                "- Vid varje ny kodrelaterad fråga startar denna vägledning om från början.\n\n"
+                        "## Interaction Rules:\n"
+                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
+                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
+                        "- If the user provides a code block make sure to answer by guiding first and then asking the student if they want the completed output.\n"
+                        "- If the user provides terminal error messages or tracebacks, you should **always** give explanations so the student understand. \n"
 
-                "## Viktigt:\n"
-                "- Anpassa språket i ditt svar efter användarens språk.\n"
-                "- Om en användare skriver på t.ex. franska, svara på franska.\n"
-                "- Om användaren skriver på ett språk du inte känner igen, be dem specificera vilket språk de vill ha svar på.\n"
-                "- Ge vägledning **en del i taget**, baserat på studentens respons. Börja med steg 1 och ge nästa steg endast om studenten uttrycker att de fortfarande är osäkra.\n"
-                "- Om ett svar är för långt (över 2000 tokens), meddela studenten och dela upp svaret i mindre delar."
-            ),
-        }
-    ]
+                        "If the user is still uncertain of that specific problem or question after the third time, that is when you can provide with immediate answers and solutions\n"
 
+                        "- This should be applied to all user queries, regardless of the topic or nature of the question.\n"
+                        "- If a user initiates a new question/problem, make sure to follow the structure above **from the beginning**.\n"
+                        "- If a user submits a code snippet or a partial attempt and requests help, follow the same process.\n\n"
 
-        # Appending the users messages in history 
+                        "## Important Considerations:\n"
+                        "- Always respond in the user's language.\n"
+                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
+                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
+                        "- If a user writes in a language you do not recognize, ask them to specify their preferred language for the response.\n"
+                        "- If a response exceeds 2000 tokens, inform the user and split the response into smaller parts."
+                    )
+                }
+            ]
+
+        # Check if the user is asking a new question
+        is_new_question = self._is_new_question(query)
+
+        # If it's a new question, reset the conversation history
+        if is_new_question:
+            self.user_histories[user_id] = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a teaching assistant that helps students develop their problem-solving skills in C programming. The students may have prior experience in Python programming."
+                        "You should adapt your responses based on the student's language. \n\n"
+
+                        "## Interaction Rules:\n"
+                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
+                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
+                        "- If the user provides a code block make sure to answer by guiding first and then asking the student if they want the completed output.\n"
+                        "- If the user provides terminal error messages or tracebacks, you should **always** give explanations so the student understand. \n"
+
+                        "If the user is still uncertain of that specific problem or question after the third time, that is when you can provide with immediate answers and solutions\n"
+
+                        "- This should be applied to all user queries, regardless of the topic or nature of the question.\n"
+                        "- If a user initiates a new question/problem, make sure to follow the structure above **from the beginning**.\n"
+                        "- If a user submits a code snippet or a partial attempt and requests help, follow the same process.\n\n"
+
+                        "## Important Considerations:\n"
+                        "- Always respond in the user's language.\n"
+                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
+                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
+                        "- If a user writes in a language you do not recognize, ask them to specify their preferred language for the response.\n"
+                        "- If a response exceeds 2000 tokens, inform the user and split the response into smaller parts."
+                    )
+                }
+            ]
+
+        # Appending the user's messages in history 
         self.user_histories[user_id].append({"role": "user", "content": query})
 
         try:
@@ -93,10 +126,10 @@ class ChatGPTBot(commands.Bot):
             # Edit the "thinking" message to the final response
             await thinking_message.edit(content=chat_message)
 
-            # Appending the AI:s answer in the history (list)
+            # Appending the AI's answer in the history (list)
             self.user_histories[user_id].append({"role": "assistant", "content": chat_message})
 
-            # Limiting the history's lenght to not exceed the token limit
+            # Limiting the history's length to not exceed the token limit
             if len(self.user_histories[user_id]) > 10:  # Adjusting the maximum messages (if needed) 
                 self.user_histories[user_id] = self.user_histories[user_id][-10:]
 
@@ -105,6 +138,23 @@ class ChatGPTBot(commands.Bot):
             await message.channel.send("❌ Jag stötte på ett fel. Försök igen senare.")
 
         await self.process_commands(message)
+
+    def _is_new_question(self, query):
+        """
+        Determine if the user is asking a new question.
+        This includes checking for keywords and code blocks.
+        """
+        # Keywords that indicate a new question
+        new_question_keywords = ["how do I", "what is", "can you help", "explain", "help me", "new problem", "?"]
+        
+        # Check if the query contains any of the new question keywords
+        contains_keyword = any(keyword in query.lower() for keyword in new_question_keywords)
+        
+        # Check if the query contains a code block (enclosed in triple backticks)
+        contains_code_block = "```" in query
+        
+        # If either condition is met, treat it as a new question
+        return contains_keyword or contains_code_block
 
 # Starting the bot
 async def main():
