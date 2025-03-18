@@ -34,6 +34,12 @@ class ChatGPTBot(commands.Bot):
 
     async def on_ready(self):
         print(f"✅ {self.user} is now online and ready to chat with!")
+        print(f"Environment Variables:")
+        print(f"DISCORD_TOKEN: {os.getenv('DISCORD_TOKEN')}")
+        print(f"AZURE_OPENAI_API_KEY: {os.getenv('AZURE_OPENAI_API_KEY')}")
+        print(f"AZURE_OPENAI_ENDPOINT: {os.getenv('AZURE_OPENAI_ENDPOINT')}")
+        print(f"AZURE_OPENAI_DEPLOYMENT: {os.getenv('AZURE_OPENAI_DEPLOYMENT')}")
+        print(f"OPENAI_API_VERSION: {os.getenv('OPENAI_API_VERSION')}")
 
     async def on_message(self, message):
         if message.author == self.user:
