@@ -20,7 +20,7 @@ AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT") 
 OPENAI_API_VERSION = "2024-07-01-preview"
 
-# Configure Azure OpenAI API
+# Configure Azure OpenAI APIs
 openai.api_type = "azure"
 openai.api_base = AZURE_OPENAI_ENDPOINT
 openai.api_key = AZURE_OPENAI_API_KEY
@@ -31,6 +31,37 @@ class ChatGPTBot(commands.Bot):
     def __init__(self, command_prefix, intents):
         super().__init__(command_prefix=command_prefix, intents=intents)
         self.user_histories = {}  # Saving the conversation history from the user
+
+    def _get_default_user_history(self):
+        # Returns the default user history structure.
+        return [
+            {
+                "role": "system",
+                "content": (
+                    "You are a teaching assistant that helps students develop their problem-solving skills in C programming. The students may have prior experience in Python programming."
+                    "You should adapt your responses based on the student's language. \n\n"
+
+                    "## Interaction Rules:\n"
+                    "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
+                    "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
+                    "- If the user provides a code block make sure to answer by guiding first and then asking the student if they want the completed output.\n"
+                    "- If the user provides terminal error messages or tracebacks, you should **always** give explanations so the student understand. \n"
+
+                    "If the user is still uncertain of that specific problem or question after the third time, that is when you can provide with immediate answers and solutions\n"
+
+                    "- This should be applied to all user queries, regardless of the topic or nature of the question.\n"
+                    "- If a user initiates a new question/problem, make sure to follow the structure above **from the beginning**.\n"
+                    "- If a user submits a code snippet or a partial attempt and requests help, follow the same process.\n\n"
+
+                    "## Important Considerations:\n"
+                    "- Always respond in the user's language.\n"
+                    "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
+                    "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
+                    "- If a user writes in a language you do not recognize, ask them to specify their preferred language for the response.\n"
+                    "- If a response exceeds 2000 tokens, inform the user and split the response into smaller parts."
+                )
+            }
+        ]
 
     async def on_ready(self):
         print(f"✅ {self.user} is now online and ready to chat with!")
@@ -53,68 +84,14 @@ class ChatGPTBot(commands.Bot):
 
         # If the user is new, a new chat history will be made 
         if user_id not in self.user_histories:
-            self.user_histories[user_id] = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a teaching assistant that helps students develop their problem-solving skills in C programming. The students may have prior experience in Python programming."
-                        "You should adapt your responses based on the student's language. \n\n"
-
-                        "## Interaction Rules:\n"
-                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
-                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
-                        "- If the user provides a code block make sure to answer by guiding first and then asking the student if they want the completed output.\n"
-                        "- If the user provides terminal error messages or tracebacks, you should **always** give explanations so the student understand. \n"
-
-                        "If the user is still uncertain of that specific problem or question after the third time, that is when you can provide with immediate answers and solutions\n"
-
-                        "- This should be applied to all user queries, regardless of the topic or nature of the question.\n"
-                        "- If a user initiates a new question/problem, make sure to follow the structure above **from the beginning**.\n"
-                        "- If a user submits a code snippet or a partial attempt and requests help, follow the same process.\n\n"
-
-                        "## Important Considerations:\n"
-                        "- Always respond in the user's language.\n"
-                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
-                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
-                        "- If a user writes in a language you do not recognize, ask them to specify their preferred language for the response.\n"
-                        "- If a response exceeds 2000 tokens, inform the user and split the response into smaller parts."
-                    )
-                }
-            ]
+            self.user_histories[user_id] = self._get_default_user_history()
 
         # Check if the user is asking a new question
         is_new_question = self._is_new_question(query)
 
         # If it's a new question, reset the conversation history
         if is_new_question:
-            self.user_histories[user_id] = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a teaching assistant that helps students develop their problem-solving skills in C programming. The students may have prior experience in Python programming."
-                        "You should adapt your responses based on the student's language. \n\n"
-
-                        "## Interaction Rules:\n"
-                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
-                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
-                        "- If the user provides a code block make sure to answer by guiding first and then asking the student if they want the completed output.\n"
-                        "- If the user provides terminal error messages or tracebacks, you should **always** give explanations so the student understand. \n"
-
-                        "If the user is still uncertain of that specific problem or question after the third time, that is when you can provide with immediate answers and solutions\n"
-
-                        "- This should be applied to all user queries, regardless of the topic or nature of the question.\n"
-                        "- If a user initiates a new question/problem, make sure to follow the structure above **from the beginning**.\n"
-                        "- If a user submits a code snippet or a partial attempt and requests help, follow the same process.\n\n"
-
-                        "## Important Considerations:\n"
-                        "- Always respond in the user's language.\n"
-                        "- Never give the solutions or answers in a full code block, it should always be given as increments so users cannot copy and paste directly.\n"
-                        "- When a user asks a question or presents a problem give guided feedback and avoid providing immediate answers and solutions. \n"
-                        "- If a user writes in a language you do not recognize, ask them to specify their preferred language for the response.\n"
-                        "- If a response exceeds 2000 tokens, inform the user and split the response into smaller parts."
-                    )
-                }
-            ]
+            self.user_histories[user_id] = self._get_default_user_history()
 
         # Appending the user's messages in history 
         self.user_histories[user_id].append({"role": "user", "content": query})
@@ -170,6 +147,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-#python3 main.py 
